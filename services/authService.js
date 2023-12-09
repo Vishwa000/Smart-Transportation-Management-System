@@ -3,10 +3,14 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const config = require('../config/config');
+const { registerValidation, loginValidation } = require('./validation');
+const { validateEmail, validateMobileNumber, validateName } = require('./validationUtils');
+
 
 const generateOTP = () => {
   // Generate a random 6-digit OTP
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  const randomOTP = Math.floor(100000 + Math.random() * 900000).toString();
+  return randomOTP;
 };
 
 const sendOTP = async (user, otp) => {
@@ -14,35 +18,106 @@ const sendOTP = async (user, otp) => {
   console.log(`Sending OTP ${otp} to user ${user.username}`);
 };
 
-const registerUser = async (username, password,role) => {
+const formatUserData = (user) => {
+  const { _id, username, role, email, mobileNumber, firstName, lastName, createdAt, updatedAt } = user;
+  return {
+    id: _id,
+    username,
+    role,
+    email,
+    mobileNumber,
+    firstName,
+    lastName,
+    created_at: createdAt,
+    updated_at: updatedAt,
+  };
+};
+
+const generateToken = (user) => {
+  const tokenPayload = {
+    userId: user._id,
+    username: user.username,
+    role: user.role,
+  };
+
+  const expiresIn = 3600; // Adjust the expiration time as needed
+  const expiryDatetime = new Date(Date.now() + expiresIn * 1000);
+
+  // Generate a JWT token
+  const access_token = jwt.sign(tokenPayload, config.secretKey, {
+    expiresIn,
+  });
+
+  // Generate a JWT token with a longer expiration time (refresh token)
+  const refresh_token = jwt.sign(tokenPayload, config.secretKey, {
+    expiresIn: 604800, // Set a longer expiration time for the refresh token
+  });
+  return {
+    access_token,
+    refresh_token,
+    expires_in: expiresIn,
+    expiry_datetime: expiryDatetime,
+  };
+};
+
+const refreshAccessToken = (oldTokenPayload) => {
+  // Extract user information from the old token
+  const { userId, username, role } = oldTokenPayload;
+
+  // Generate a new access token with the same user information
+  const newAccessToken = jwt.sign({ userId, username, role }, config.secretKey, {
+    expiresIn: '1h',
+  });
+
+  return { access_token: newAccessToken };
+};
+
+const registerUser = async (username, password, role, email, mobileNumber, firstName, lastName) => {
+  // Validate user input using Joi
+  const validation = registerValidation({ username, password, role, email, mobileNumber });
+
+  if (validation.error) {
+    return { status: validation.error.details[0].message };
+  }
+
+  // Validate email and mobile number
+  const emailValidation = validateEmail(email);
+  if (emailValidation.error) {
+    return { status: 'Invalid email format' };
+  }
+
+  const mobileNumberValidation = validateMobileNumber(mobileNumber);
+  if (mobileNumberValidation.error) {
+    return { status: 'Invalid mobile number format' };
+  }
+
   try {
-    // Check if the username already exists
     const existingUser = await User.findOne({ username });
     if (existingUser) {
-      throw new Error('Username already exists');
+      return { status: 'Username already exists' };
     }
 
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = generateOTP();
-    // Set actualRole to role if role is truthy, otherwise explicitly set to undefined
-    const actualRole = role !== undefined ? role : undefined;
 
-    // Create a new user
     const newUser = new User({
       username,
       password: hashedPassword,
       role,
+      email,
+      mobileNumber,
       otp,
+      firstName,
+      lastName
     });
 
-    // Save the user to the database
     await newUser.save();
     await sendOTP(newUser, otp);
 
-    return { message: 'User registered successfully. OTP sent.' };
+    return { status: 'User registered successfully. OTP sent.' };
   } catch (error) {
-    throw error;
+    console.error(error); // Log the error for debugging purposes
+    return { status: 'Registration failed. Please try again later.' };
   }
 };
 
@@ -50,14 +125,14 @@ const verifyOTP = async (username, enteredOTP) => {
   try {
     const user = await User.findOne({ username });
     if (!user) {
-      throw new Error('Invalid username');
+      return { status: 'Invalid username' };
     }
 
     // Hardcoded OTP for demonstration, replace with your logic
-    const hardcodedOTP = '123456';
+    // const hardcodedOTP = '123456';
 
-    if (enteredOTP !== hardcodedOTP) {
-      throw new Error('Invalid OTP');
+    if (enteredOTP !== user.otp) {
+      return { status: 'Invalid OTP' };
     }
 
     // Update user status or perform any additional logic upon successful OTP verification
@@ -65,43 +140,50 @@ const verifyOTP = async (username, enteredOTP) => {
     await user.save();
 
     return { message: 'OTP verified successfully' };
-  } catch (error) {
-    throw error;
+  } catch (status) {
+    return { status: `Error during OTP verification: ${status.message}` };
   }
 };
 const loginUser = async (username, password, role) => {
+  // Validate user input using Joi
+  const validation = loginValidation({ username, password, role });
+
+  if (validation.error) {
+    return { status: validation.error.details[0].message };
+  }
+
   try {
-    // Find the user in the database
     const user = await User.findOne({ username });
     if (!user) {
-      throw new Error('Invalid username or password');
+      return { status: 'Invalid username or password' };
     }
 
-    // Compare the provided password with the hashed password in the database
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new Error('Invalid username or password');
+      return { status: 'Invalid username or password' };
     }
 
-    // Check if the role matches the one provided during registration
     if (user.role !== role) {
-      throw new Error('Role mismatch');
+      return { status: 'Role mismatch' };
     }
 
-    
     if (!user.isVerified) {
-      throw new Error('User is not verified. Please verify OTP.');
+      return { status: 'User is not verified. Please verify OTP.' };
     }
 
-    // Generate a JWT token
-    const token = jwt.sign({ userId: user._id, username: user.username, role: user.role }, config.secretKey, {
-      expiresIn: '1h',
-    });
+    const token = generateToken(user);
+    const userData = formatUserData(user);
 
-    return { token };
+    return {
+      status: true,
+      message: 'Login successful',
+      data: { user: userData },
+      token,
+    };
   } catch (error) {
-    throw error;
+    console.error(error); // Log the error for debugging purposes
+    return { status: false, message: 'Login failed. Please try again later.' };
   }
 };
 
-module.exports = { registerUser, loginUser,verifyOTP };
+module.exports = { registerUser, loginUser, verifyOTP, refreshAccessToken };

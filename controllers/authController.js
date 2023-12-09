@@ -3,8 +3,8 @@ const authService = require('../services/authService');
 
 const register = async (req, res) => {
   try {
-    const { username, password, role  } = req.body;
-    const result = await authService.registerUser(username, password,role);
+    const { username, password, role, email, mobileNumber,firstName, lastName} = req.body;
+    const result = await authService.registerUser(username, password,role, email, mobileNumber,firstName, lastName);
     res.status(201).json(result);
   } catch (error) {
     console.error(error);
@@ -25,8 +25,8 @@ const verifyOTP = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const { username, password,role } = req.body;
-    const result = await authService.loginUser(username, password,role);
+    const { username, password, role, email, mobileNumber,firstName, lastName} = req.body;
+    const result = await authService.loginUser(username, password,role, email, mobileNumber,firstName, lastName);
     res.status(200).json(result);
   } catch (error) {
     console.error(error);
