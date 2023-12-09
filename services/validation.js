@@ -1,0 +1,28 @@
+// services/validation.js
+const Joi = require('joi');
+
+const registerValidation = (data) => {
+  const schema = Joi.object({
+    username: Joi.string().regex(/^[a-zA-Z0-9_]{3,30}$/).required(),
+    password: Joi.string().pattern(/^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{3,30}$/).required(),
+    role: Joi.string().valid('admin', 'passenger', 'driver').required(),
+    email: validateEmail,
+    mobileNumber: validateMobileNumber,
+    firstName: Joi.string().trim().min(2).max(30),
+    lastName: Joi.string().trim().min(2).max(30)
+  });
+
+  return schema.validate(data);
+};
+
+const loginValidation = (data) => {
+  const schema = Joi.object({
+    username: Joi.string().regex(/^[a-zA-Z0-9_]{3,30}$/).required(),
+    password: Joi.string().pattern(/^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{3,30}$/).required(),
+    role: Joi.string().valid('admin', 'passenger', 'driver').required(),
+  });
+
+  return schema.validate(data);
+};
+
+module.exports = { registerValidation, loginValidation };
