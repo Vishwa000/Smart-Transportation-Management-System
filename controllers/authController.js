@@ -23,6 +23,29 @@ const verifyOTP = async (req, res) => {
   }
 };
 
+const forgotPassword = async (req, res) => {
+  try {
+    const { username } = req.body;
+    const result = await authService.forgotPassword(username);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { username, newPassword, confirmPassword, otp } = req.body;
+    const result = await authService.resetPassword(username, newPassword, confirmPassword, otp);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
 const login = async (req, res) => {
   try {
     const { username, password, role, email, mobileNumber,firstName, lastName} = req.body;
@@ -38,4 +61,6 @@ module.exports = {
   register,
   verifyOTP,
   login,
+  forgotPassword,
+  resetPassword,
 };

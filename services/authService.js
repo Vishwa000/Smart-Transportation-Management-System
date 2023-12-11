@@ -72,6 +72,58 @@ const refreshAccessToken = (oldTokenPayload) => {
   return { access_token: newAccessToken };
 };
 
+const forgotPassword = async (username) => {
+  try {
+    const user = await User.findOne({ username });
+
+    if (!user) {
+      return { status: 'Invalid username' };
+    }
+
+    const otp = generateOTP();
+    user.otp = otp;
+    await user.save();
+
+    await sendOTP(user, otp);
+
+    return { status: 'OTP sent successfully' };
+  } catch (error) {
+    console.error(error);
+    return { status: 'Failed to initiate forgot password process. Please try again later.' };
+  }
+};
+
+const resetPassword = async (username, newPassword, confirmPassword, otp) => {
+  try {
+    const user = await User.findOne({ username });
+
+    if (!user) {
+      return { status: 'Invalid username' };
+    }
+
+    if (otp !== user.otp) {
+      return { status: 'Invalid OTP' };
+    }
+
+    // Check if new password and confirm password match
+    if (newPassword !== confirmPassword) {
+      return { status: 'New password and confirm password do not match' };
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.otp = null; // Clear the OTP after successful password reset
+    await user.save();
+
+    return { status: 'Password reset successful' };
+  } catch (error) {
+    console.error(error);
+    return { status: 'Password reset failed. Please try again later.' };
+  }
+};
+
+
+
 const registerUser = async (username, password, role, email, mobileNumber, firstName, lastName) => {
   // Validate user input using Joi
   const validation = registerValidation({ username, password, role, email, mobileNumber });
@@ -186,4 +238,4 @@ const loginUser = async (username, password, role) => {
   }
 };
 
-module.exports = { registerUser, loginUser, verifyOTP, refreshAccessToken };
+module.exports = { registerUser, loginUser, verifyOTP, refreshAccessToken, forgotPassword, resetPassword };
