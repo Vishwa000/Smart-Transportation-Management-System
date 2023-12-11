@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const connectDB = require('./utils/db');
 const setupMiddlewares = require('./utils/middlewares');
 const authRoutes = require('./routes/authRoutes');
+const usersRoutes = require('./routes/usersRoutes');
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ setupMiddlewares(app);
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/users', usersRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
