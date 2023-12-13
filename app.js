@@ -3,7 +3,9 @@ const dotenv = require('dotenv');
 const connectDB = require('./utils/db');
 const setupMiddlewares = require('./utils/middlewares');
 const authRoutes = require('./routes/authRoutes');
-const usersRoutes = require('./routes/usersRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const driverRoutes = require('./routes/driverRoutes');
+const passengerRoutes = require('./routes/passengerRoutes');
 
 dotenv.config();
 
@@ -18,7 +20,9 @@ setupMiddlewares(app);
 
 // Routes
 app.use('/auth', authRoutes);
-app.use('/users', usersRoutes);
+app.use('/admin', adminRoutes);
+app.use('/driver', driverRoutes);
+app.use('/passenger', passengerRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
