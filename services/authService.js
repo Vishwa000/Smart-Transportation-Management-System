@@ -123,6 +123,38 @@ const resetPassword = async (username, newPassword, confirmPassword, otp) => {
 };
 
 
+const changePassword = async (userId, currentPassword, newPassword) => {
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return { status: false, message: 'User not found' };
+    }
+
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+      return { status: false, message: 'Current password is incorrect' };
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedNewPassword;
+    await user.save();
+
+    // Generate a new access token after changing the password
+    // const tokenPayload = {
+    //   userId: user._id,
+    //   username: user.username,
+    //   role: user.role,
+    // };
+    // const newAccessToken = jwt.sign(tokenPayload, config.secretKey, {
+    //   expiresIn: '1h',
+    // });
+
+    return { status: true, message: 'Password changed successfully',  };
+  } catch (error) {
+    console.error(error);
+    return { status: false, message: 'Error changing password. Please try again later.' };
+  }
+};
 
 const registerUser = async (username, password, role, email, mobileNumber, firstName, lastName) => {
   // Validate user input using Joi
