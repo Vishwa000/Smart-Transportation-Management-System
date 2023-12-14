@@ -23,19 +23,9 @@ const verifyOTP = async (req, res) => {
   }
 };
 
-const login = async (req, res) => {
-  try {
-    const { username, password,role } = req.body;
-    const result = await authService.loginUser(username, password,role);
-    res.status(200).json(result);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-};
+
 
 module.exports = {
   register,
   verifyOTP,
-  login,
 };

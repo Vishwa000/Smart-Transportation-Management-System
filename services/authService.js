@@ -69,39 +69,6 @@ const verifyOTP = async (username, enteredOTP) => {
     throw error;
   }
 };
-const loginUser = async (username, password, role) => {
-  try {
-    // Find the user in the database
-    const user = await User.findOne({ username });
-    if (!user) {
-      throw new Error('Invalid username or password');
-    }
 
-    // Compare the provided password with the hashed password in the database
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new Error('Invalid username or password');
-    }
 
-    // Check if the role matches the one provided during registration
-    if (user.role !== role) {
-      throw new Error('Role mismatch');
-    }
-
-    
-    if (!user.isVerified) {
-      throw new Error('User is not verified. Please verify OTP.');
-    }
-
-    // Generate a JWT token
-    const token = jwt.sign({ userId: user._id, username: user.username, role: user.role }, config.secretKey, {
-      expiresIn: '1h',
-    });
-
-    return { token };
-  } catch (error) {
-    throw error;
-  }
-};
-
-module.exports = { registerUser, loginUser,verifyOTP };
+module.exports = { registerUser, verifyOTP };
