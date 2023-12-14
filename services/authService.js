@@ -270,4 +270,4 @@ const loginUser = async (username, password, role) => {
   }
 };
 
-module.exports = { registerUser, loginUser, verifyOTP, refreshAccessToken, forgotPassword, resetPassword };
+module.exports = { registerUser, loginUser, verifyOTP, refreshAccessToken, forgotPassword, resetPassword,changePassword};
