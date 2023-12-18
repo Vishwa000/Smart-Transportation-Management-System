@@ -1,4 +1,6 @@
+// services/driverService.js
 const User = require('../models/user');
+const Review = require('../models/review');
 
 
 const getAllDrivers = async () => {
@@ -26,41 +28,55 @@ const getAllDrivers = async () => {
     }
   };
 
-  const updateDriverFeedback = async (driverId, passengerId, feedback, rating) => {
+  const createDriverReview = async (reviewerId, driverId, rating, feedback) => {
     try {
-      const driver = await User.findById(driverId);
+      // Create a new review
+      const newReview = await Review.create({
+        reviewerId,
+        targetId: driverId,
+        rating,
+        feedback,
+      });
   
-      if (!driver) {
-        return { status: false, message: 'Driver not found', data: null };
-      }
+      // Fetch all reviews for the driver
+      const allReviews = await Review.find({ targetId: driverId });
   
-      // Check if the passenger already provided feedback
-      const existingFeedback = driver.driverFeedback.find((item) => item.passengerId.toString() === passengerId.toString());
+      // Calculate the average rating
+      const totalRatings = allReviews.reduce((sum, review) => sum + review.rating, 0);
+      const averageRating = totalRatings / allReviews.length;
   
-      if (existingFeedback) {
-        // Update existing feedback
-        existingFeedback.feedback = feedback;
-        existingFeedback.rating = rating;
-      } else {
-        // Add new feedback
-        driver.driverFeedback.push({
-          passengerId,
-          feedback,
-          rating,
-        });
-      }
+    // Generate a summary object with total count
+    const feedbackSummary = {
+      totalReviews: allReviews.length,
+      totalRatings,
+      averageRating,
+    };
+    
+      // Calculate average percentage and update the new review in the database
+      const averagePercentage = (averageRating / 5) * 100;
+      await Review.findByIdAndUpdate(newReview._id, { averagePercentage }, { new: true, runValidators: true });
   
-      await driver.save();
-  
-      return { status: true, message: 'Feedback and rating submitted successfully', data: driver.driverFeedback };
+      return {
+        status: true,
+        message: 'Review created successfully',
+        data: {
+          allReviews,
+          averageRating,
+          averagePercentage,
+          feedbackSummary,
+        },
+      };
     } catch (error) {
       console.error(error);
-      return { status: false, message: 'Error submitting feedback and rating', data: null };
+      return { status: false, message: 'Error creating review', data: null };
     }
   };
+  
+  
+  
   
   module.exports = {
     getAllDrivers,
     updateDriver,
-    updateDriverFeedback,
+    createDriverReview,
   };

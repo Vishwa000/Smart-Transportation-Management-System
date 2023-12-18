@@ -1,5 +1,7 @@
-// services/userService.js
+// services/passengerService.js
 const User = require('../models/user');
+const Review = require('../models/review');
+
 
 const getAllPassengers = async () => {
     try{
@@ -26,41 +28,53 @@ const getAllPassengers = async () => {
       }
     };
 
-    const updatePassengerFeedback = async (passengerId, driverId, feedback, rating) => {
+    const createPassengerReview = async (reviewerId, passengerId, rating, feedback) => {
       try {
-        const passenger = await User.findById(passengerId);
+        // Create a new review
+        const newReview = await Review.create({
+          reviewerId,
+          targetId: passengerId,
+          rating,
+          feedback,
+        });
     
-        if (!passenger) {
-          return { status: false, message: 'Passenger not found', data: null };
-        }
+        // Fetch all reviews for the passenger
+        const allReviews = await Review.find({ targetId: passengerId });
     
-        // Check if the driver already provided feedback
-        const existingFeedback = passenger.passengerFeedback.find((item) => item.driverId.toString() === driverId.toString());
+        // Calculate the average rating
+        const totalRatings = allReviews.reduce((sum, review) => sum + review.rating, 0);
+        const averageRating = totalRatings / allReviews.length;
     
-        if (existingFeedback) {
-          // Update existing feedback
-          existingFeedback.feedback = feedback;
-          existingFeedback.rating = rating;
-        } else {
-          // Add new feedback
-          passenger.passengerFeedback.push({
-            driverId,
-            feedback,
-            rating,
-          });
-        }
+            // Generate a summary object with total count
+    const feedbackSummary = {
+      totalReviews: allReviews.length,
+      totalRatings,
+      averageRating,
+    };
+        // Calculate average percentage and update the new review in the database
+        const averagePercentage = (averageRating / 5) * 100;
+        await Review.findByIdAndUpdate(newReview._id, { averagePercentage }, { new: true, runValidators: true });
     
-        await passenger.save();
-    
-        return { status: true, message: 'Feedback and rating submitted successfully', data: passenger.passengerFeedback };
+        return {
+          status: true,
+          message: 'Review created successfully',
+          data: {
+            allReviews,
+            averageRating,
+            averagePercentage,
+            feedbackSummary,
+          },
+        };
       } catch (error) {
         console.error(error);
-        return { status: false, message: 'Error submitting feedback and rating', data: null };
+        return { status: false, message: 'Error creating review', data: null };
       }
     };
+    
+    
 
 module.exports = {
   getAllPassengers,
   updatePassenger,
-  updatePassengerFeedback,
+  createPassengerReview,
 };

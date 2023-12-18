@@ -1,3 +1,4 @@
+// services/adminService.js
 const User = require('../models/user');
 
 const getAllAdmin = async () => {

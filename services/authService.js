@@ -5,7 +5,7 @@ const User = require('../models/user');
 const config = require('../config/config');
 const { registerValidation, loginValidation } = require('./validation');
 const { validateEmail, validateMobileNumber, validateName } = require('./validationUtils');
-
+require('dotenv').config();
 
 const generateOTP = () => {
   // Generate a random 6-digit OTP
@@ -18,20 +18,30 @@ const sendOTP = async (user, otp) => {
   console.log(`Sending OTP ${otp} to user ${user.username}`);
 };
 
-const formatUserData = (user) => {
-  const { _id, username, role, email, mobileNumber, firstName, lastName, createdAt, updatedAt } = user;
-  return {
-    id: _id,
-    username,
-    role,
-    email,
-    mobileNumber,
-    firstName,
-    lastName,
-    created_at: createdAt,
-    updated_at: updatedAt,
-  };
+const verifyOTP = async (username, enteredOTP) => {
+  try {
+    const user = await User.findOne({ username });
+    if (!user) {
+      return { status: 'Invalid username' };
+    }
+
+    // Hardcoded OTP for demonstration, replace with your logic
+    // const hardcodedOTP = '123456';
+
+    if (enteredOTP !== user.otp) {
+      return { status: 'Invalid OTP' };
+    }
+
+    // Update user status or perform any additional logic upon successful OTP verification
+    user.isVerified = true;
+    await user.save();
+
+    return { message: 'OTP verified successfully' };
+  } catch (status) {
+    return { status: `Error during OTP verification: ${status.message}` };
+  }
 };
+
 
 const generateToken = (user) => {
   const tokenPayload = {
@@ -149,12 +159,77 @@ const changePassword = async (userId, currentPassword, newPassword) => {
     //   expiresIn: '1h',
     // });
 
-    return { status: true, message: 'Password changed successfully',  };
+    return { status: true, message: 'Password changed successfully', };
   } catch (error) {
     console.error(error);
     return { status: false, message: 'Error changing password. Please try again later.' };
   }
 };
+
+
+const formatUserData = (user) => {
+  const { _id, username, role, email, mobileNumber, firstName, lastName, createdAt, updatedAt } = user;
+  return {
+    id: _id,
+    username,
+    role,
+    email,
+    mobileNumber,
+    firstName,
+    lastName,
+    created_at: createdAt,
+    updated_at: updatedAt,
+  };
+};
+
+// const registerUser = async (username, password, role, email, mobileNumber, firstName, lastName) => {
+//   // Validate user input using Joi
+//   const validation = registerValidation({ username, password, role, email, mobileNumber });
+
+//   if (validation.error) {
+//     return { status: validation.error.details[0].message };
+//   }
+
+//   // Validate email and mobile number
+//   const emailValidation = validateEmail(email);
+//   if (emailValidation.error) {
+//     return { status: 'Invalid email format' };
+//   }
+
+//   const mobileNumberValidation = validateMobileNumber(mobileNumber);
+//   if (mobileNumberValidation.error) {
+//     return { status: 'Invalid mobile number format' };
+//   }
+
+//   try {
+//     const existingUser = await User.findOne({ username });
+//     if (existingUser) {
+//       return { status: 'Username already exists' };
+//     }
+
+//     const hashedPassword = await bcrypt.hash(password, 10);
+//     const otp = generateOTP();
+
+//     const newUser = new User({
+//       username,
+//       password: hashedPassword,
+//       role,
+//       email,
+//       mobileNumber,
+//       otp,
+//       firstName,
+//       lastName
+//     });
+
+//     await newUser.save();
+//     await sendOTP(newUser, otp);
+
+//     return { status: 'User registered successfully. OTP sent.' };
+//   } catch (error) {
+//     console.error(error); // Log the error for debugging purposes
+//     return { status: 'Registration failed. Please try again later.' };
+//   }
+// };
 
 const registerUser = async (username, password, role, email, mobileNumber, firstName, lastName) => {
   // Validate user input using Joi
@@ -176,6 +251,15 @@ const registerUser = async (username, password, role, email, mobileNumber, first
   }
 
   try {
+        // Check if registering a super admin
+        if (role === 'superadmin') {
+          // Check if a Super Admin already exists in the database
+          const existingSuperAdmin = await User.findOne({ role: 'superadmin' });
+          if (existingSuperAdmin) {
+            return { status: 'Super Admin already registered' };
+          }
+        }
+
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return { status: 'Username already exists' };
@@ -184,6 +268,8 @@ const registerUser = async (username, password, role, email, mobileNumber, first
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = generateOTP();
 
+
+    // Registering a regular user
     const newUser = new User({
       username,
       password: hashedPassword,
@@ -192,11 +278,10 @@ const registerUser = async (username, password, role, email, mobileNumber, first
       mobileNumber,
       otp,
       firstName,
-      lastName
+      lastName,
     });
 
     await newUser.save();
-    await sendOTP(newUser, otp);
 
     return { status: 'User registered successfully. OTP sent.' };
   } catch (error) {
@@ -205,29 +290,7 @@ const registerUser = async (username, password, role, email, mobileNumber, first
   }
 };
 
-const verifyOTP = async (username, enteredOTP) => {
-  try {
-    const user = await User.findOne({ username });
-    if (!user) {
-      return { status: 'Invalid username' };
-    }
 
-    // Hardcoded OTP for demonstration, replace with your logic
-    // const hardcodedOTP = '123456';
-
-    if (enteredOTP !== user.otp) {
-      return { status: 'Invalid OTP' };
-    }
-
-    // Update user status or perform any additional logic upon successful OTP verification
-    user.isVerified = true;
-    await user.save();
-
-    return { message: 'OTP verified successfully' };
-  } catch (status) {
-    return { status: `Error during OTP verification: ${status.message}` };
-  }
-};
 const loginUser = async (username, password, role) => {
   // Validate user input using Joi
   const validation = loginValidation({ username, password, role });
@@ -270,4 +333,13 @@ const loginUser = async (username, password, role) => {
   }
 };
 
-module.exports = { registerUser, loginUser, verifyOTP, refreshAccessToken, forgotPassword, resetPassword,changePassword};
+
+module.exports = {
+  registerUser,
+  loginUser,
+  verifyOTP,
+  refreshAccessToken,
+  forgotPassword,
+  resetPassword,
+  changePassword,
+};

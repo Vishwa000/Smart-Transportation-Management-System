@@ -5,7 +5,7 @@ const registerValidation = (data) => {
   const schema = Joi.object({
     username: Joi.string().regex(/^[a-zA-Z0-9_]{3,30}$/).required(),
     password: Joi.string().pattern(/^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{3,30}$/).required(),
-    role: Joi.string().valid('admin', 'passenger', 'driver').required(),
+    role: Joi.string().valid('admin', 'passenger', 'driver','superadmin').required(),
     email: Joi.string().email().required(),
     mobileNumber: Joi.string().pattern(new RegExp('^[0-9]{10}$')).required(),
     firstName: Joi.string().trim().min(2).max(30),
@@ -19,7 +19,7 @@ const loginValidation = (data) => {
   const schema = Joi.object({
     username: Joi.string().regex(/^[a-zA-Z0-9_]{3,30}$/).required(),
     password: Joi.string().pattern(/^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{3,30}$/).required(),
-    role: Joi.string().valid('admin', 'passenger', 'driver').required(),
+    role: Joi.string().valid('admin', 'passenger', 'driver','superadmin').required(),
   });
 
   return schema.validate(data);

@@ -1,3 +1,4 @@
+// controllers/driverController.js
 const driverService = require('../services/driverService');
 
 const getAllDrivers = async (req, res) => {
@@ -28,35 +29,27 @@ const getAllDrivers = async (req, res) => {
     }
 };
 
-const updateDriverFeedback = async (req, res) => {
+const createDriverReview = async (req, res) => {
   try {
     const { driverId } = req.params;
-    const { passengerId, feedback, rating } = req.body;
+    const { reviewerId, rating, feedback } = req.body;
 
-    const result = await driverService.updateDriverFeedback(driverId, passengerId, feedback, rating);
+    const result = await driverService.createDriverReview(reviewerId, driverId, rating, feedback);
 
     if (!result.status) {
-      return res.status(404).json({ error: result.message });
+      return res.status(400).json({ error: result.message });
     }
 
-    res.status(200).json({ feedback: result.data, averageRating: calculateAverageRating(result.data) });
+    res.status(201).json(result);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
 
-// Helper function to calculate average rating
-const calculateAverageRating = (feedbackArray) => {
-  const totalRating = feedbackArray.reduce((sum, feedback) => sum + feedback.rating, 0);
-  const averageRating = totalRating / feedbackArray.length;
-  return averageRating;
-};
-
 module.exports = {
     getAllDrivers,
     updateDriver,
-    updateDriverFeedback,
-    
+    createDriverReview,
   };
   

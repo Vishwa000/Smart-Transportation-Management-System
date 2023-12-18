@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
   password: String,
   role: {
     type: String,
-    enum: ['admin', 'passenger', 'driver'],
+    enum: ['admin', 'passenger', 'driver','superadmin'],
   },
   email: {
     type: String,
@@ -35,34 +35,6 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  // driverFeedback: [
-  //   {
-  //     passengerId: {
-  //       type: mongoose.Schema.Types.ObjectId,
-  //       ref: 'User',
-  //     },
-  //     feedback: String,
-  //     rating: {
-  //       type: Number,
-  //       min: 1,
-  //       max: 5,
-  //     },
-  //   },
-  // ],
-  // passengerFeedback: [
-  //   {
-  //     driverId: {
-  //       type: mongoose.Schema.Types.ObjectId,
-  //       ref: 'User',
-  //     },
-  //     feedback: String,
-  //     rating: {
-  //       type: Number,
-  //       min: 1,
-  //       max: 5,
-  //     },
-  //   },
-  // ],
   
 }, {
   timestamps: true, // Automatically manage createdAt and updatedAt fields

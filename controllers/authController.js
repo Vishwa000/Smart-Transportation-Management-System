@@ -73,6 +73,35 @@ const login = async (req, res) => {
   }
 };
 
+// const registerSuperAdmin = async (req, res) => {
+//   try {
+//     const { username, password, email, mobileNumber, firstName, lastName } = req.body;
+//     const result = await authService.registerSuperAdmin(username, password, email, mobileNumber, firstName, lastName);
+//     res.status(201).json(result);
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: 'Internal server error' });
+//   }
+// };
+
+const loginSuperAdmin = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const result = await authService.loginSuperAdmin(username, password);
+
+    if (result.status) {
+      res.status(200).json({ success: true, message: result.message, data: result.data });
+    } else {
+      res.status(401).json({ success: false, message: result.message });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+
+
 module.exports = {
   register,
   verifyOTP,
@@ -80,4 +109,6 @@ module.exports = {
   forgotPassword,
   resetPassword,
   changePassword,
+  // registerSuperAdmin,
+  loginSuperAdmin,
 };

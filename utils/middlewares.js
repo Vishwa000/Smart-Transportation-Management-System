@@ -14,17 +14,22 @@ const checkTokenExpiration = (req, res, next) => {
   const token = req.headers.authorization;
 
   if (!token) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: 'Unauthorized: Token not provided' });
   }
 
   try {
     const decoded = jwt.verify(token, config.secretKey);
-    req.user = decoded; // Store the decoded user information in the request
+    // req.user = decoded; // Store the decoded user information in the request
+    console.log('Decoded Token:', decoded);
 
     // Check if the token is about to expire (e.g., within the next 5 minutes)
     const currentTime = Math.floor(Date.now() / 1000);
     const expirationTime = decoded.exp;
     const timeUntilExpiration = expirationTime - currentTime;
+
+    console.log('Current Time:', currentTime);
+    console.log('Expiration Time:', expirationTime);
+    console.log('Time Until Expiration:', timeUntilExpiration);
 
     if (timeUntilExpiration < 300) {
       // Token is about to expire, generate a new access token using the refresh token
@@ -34,8 +39,8 @@ const checkTokenExpiration = (req, res, next) => {
 
     next(); // Continue with the next middleware or route handler
   } catch (error) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
   }
 };
 
-module.exports = setupMiddlewares;
+module.exports = { setupMiddlewares, checkTokenExpiration }

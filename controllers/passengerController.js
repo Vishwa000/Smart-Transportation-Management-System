@@ -1,4 +1,4 @@
-// controllers/usersController.js
+// controllers/passengerController.js
 const passengerService = require('../services/passengerService');
 
 const getAllPassengers = async (req, res) => {
@@ -29,34 +29,29 @@ const updatePassenger = async (req, res) => {
   }
 };
 
-const updatePassengerFeedback = async (req, res) => {
+const createPassengerReview = async (req, res) => {
   try {
     const { passengerId } = req.params;
-    const { driverId, feedback, rating } = req.body;
+    const { reviewerId, rating, feedback } = req.body;
 
-    const result = await passengerService.updatePassengerFeedback(passengerId, driverId, feedback, rating);
+    const result = await passengerService.createPassengerReview(reviewerId, passengerId, rating, feedback);
 
     if (!result.status) {
-      return res.status(404).json({ error: result.message });
+      return res.status(400).json({ error: result.message });
     }
 
-    res.status(200).json({ feedback: result.data, averageRating: calculateAverageRating(result.data) });
+    res.status(201).json(result);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
 
-// Helper function to calculate average rating
-const calculateAverageRating = (feedbackArray) => {
-  const totalRating = feedbackArray.reduce((sum, feedback) => sum + feedback.rating, 0);
-  const averageRating = totalRating / feedbackArray.length;
-  return averageRating;
-};
+
 
 module.exports = {
   getAllPassengers,
   updatePassenger,
-  updatePassengerFeedback,
- 
+  createPassengerReview,
+  
 };
