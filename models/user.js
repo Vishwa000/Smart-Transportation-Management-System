@@ -32,9 +32,10 @@ const userSchema = new mongoose.Schema({
   otp: {
     type: String,
     required: true,
+    unique: true,
   },
   otpTimestamp: {
-    type: Number, // Make sure to declare this as a Number type
+    type: Date, // Make sure to declare this as a Number type
     required: true,
   },// Store OTP in the database
   

@@ -34,10 +34,21 @@ const resendOTP = async (req, res) => {
   }
 };
 
+const login = async (req, res) => {
+  try {
+    const { email, password, role } = req.body;
+    const result = await authService.loginUser(email, password, role);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
 
 
 module.exports = {
   register,
   verifyOTP,
   resendOTP,
+  login,
 };

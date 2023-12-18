@@ -14,7 +14,15 @@ const registerValidation = (data) => {
 
   return schema.validate(data);
 };
+const loginValidation = (data) => {
+  const schema = Joi.object({
+    email: Joi.string().email(),
+    password: Joi.string().pattern(/^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{3,30}$/).required(),
+    role: Joi.string().valid('admin', 'student', 'driver').required(),
+  });
+
+  return schema.validate(data);
+};
 
 
-
-module.exports = {  registerValidation };
+module.exports = {  registerValidation, loginValidation};
