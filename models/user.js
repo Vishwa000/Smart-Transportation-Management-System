@@ -1,48 +1,19 @@
-// models/user.js
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-  idNumber: String,
-  password: String,
+  mobileNumber: { type: String, required: true },
   role: {
     type: String,
+    required: true,
     enum: ['admin', 'student', 'driver'],
   },
-  email: {
-    type: String,
-    unique: true,
-    required: true,
-    trim: true,
-  },
-  mobileNumber: {
-    type: String,
-    unique: true,
-    required: true,
-  },
-  firstName: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  lastName: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  otp: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-  otpTimestamp: {
-    type: Date, // Make sure to declare this as a Number type
-    required: true,
-  },// Store OTP in the database
-  
-  isVerified: {
-    type: Boolean,
-    default: false,
-  },
-});
+  adminProfile: { type: mongoose.Schema.Types.ObjectId, ref: 'AdminProfile' },
+  studentProfile: { type: mongoose.Schema.Types.ObjectId, ref: 'StudentProfile' },
+  driverProfile: { type: mongoose.Schema.Types.ObjectId, ref: 'DriverProfile' },
+  OTP: { type: String },  // Add the OTP field
+  isVerified: { type: Boolean, default: false },  // Add the isVerified field
+}, { timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' } });
 
-module.exports = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
+
+module.exports = User;
